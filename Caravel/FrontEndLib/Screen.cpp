@@ -39,10 +39,6 @@
 
 static bool m_bIsCursorVisible = true;
 
-#if defined(__native_client__)
-#undef X_OK
-#endif
-
 //Message dialog coords and dimensions.
 const UINT CX_MESSAGE = 330;
 const UINT CY_MESSAGE = 200;
@@ -57,7 +53,7 @@ const UINT CY_TEXT = CY_MESSAGE - (CY_SPACE * 3) - CY_MESSAGE_BUTTON;
 const int X_TEXTBOX = CX_SPACE;
 const UINT CX_TEXTBOX = CX_MESSAGE - X_TEXTBOX * 2;
 const int Y_MESSAGE_BUTTON = CY_TEXT + (CY_SPACE * 2);
-const int X_OK = (CX_MESSAGE - CX_MESSAGE_BUTTON) / 2;
+const int X_OK1 = (CX_MESSAGE - CX_MESSAGE_BUTTON) / 2;
 const int X_YES = (CX_MESSAGE - CX_SPACE) / 2 - CX_MESSAGE_BUTTON;
 const int X_NO = (CX_MESSAGE + CX_SPACE) / 2;
 const int X_OK2 = CX_MESSAGE/2 - CX_SPACE - CX_MESSAGE_BUTTON;
@@ -113,7 +109,7 @@ CScreen::CScreen(
 			CX_MESSAGE_BUTTON, CY_MESSAGE_BUTTON, g_pTheDB->GetMessageText(MID_No));
 	this->pMessageDialog->AddWidget(pButton);
 
-	pButton = new CButtonWidget(TAG_OK, X_OK, Y_MESSAGE_BUTTON, 
+	pButton = new CButtonWidget(TAG_OK, X_OK1, Y_MESSAGE_BUTTON,
 					CX_MESSAGE_BUTTON, CY_MESSAGE_BUTTON, g_pTheDB->GetMessageText(MID_Okay));
 	this->pMessageDialog->AddWidget(pButton);
 	
@@ -843,7 +839,7 @@ DWORD CScreen::ShowMessage(
 	pWidget->Move(X_NO, yButtons);
 
 	pWidget = this->pMessageDialog->GetWidget(TAG_OK);
-	pWidget->Move(X_OK, yButtons);
+	pWidget->Move(X_OK1, yButtons);
 
 	pWidget = this->pMessageDialog->GetWidget(TAG_FRAME);
 	pWidget->GetRect(rect);

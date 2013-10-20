@@ -223,12 +223,11 @@ void CNewPlayerScreen::HiResPrompt()
 {
 	if (!IsFullScreen())
 	{
-#if defined(__native_client__)
-		SDL_Rect **modes=NULL;
-#else
 		SDL_Rect **modes=SDL_ListModes(NULL, SDL_FULLSCREEN);
-#endif
-		if (modes)	//In some cases, full screen modes are not available
+		// SDL_ListModes is allowed to return NULL if there are no
+		// modes available, or (SDL_Rect**)-1 if any resolution is
+		// allowed.
+		if (modes && modes != (SDL_Rect**)-1)	//In some cases, full screen modes are not available
 		{
 			for (int i=0; modes[i]; ++i)
 				if (modes[i]->w > 800 && modes[i]->h > 600)

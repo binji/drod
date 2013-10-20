@@ -27,7 +27,7 @@
 //Implementation of CDbRefs.
 
 #include "DbRefs.h"
-#if !defined(__native_client__)
+#ifndef __native_client__
 #include <memory.h>
 #endif
 

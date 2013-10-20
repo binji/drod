@@ -45,7 +45,7 @@
 #ifdef WIN32
 #	include <io.h>
 #endif
-#ifdef __POSIX__
+#ifdef IS_POSIX
 #  include <unistd.h>
 #  include <dirent.h>
 #  include <fcntl.h>
@@ -80,7 +80,7 @@ WCHAR * CFiles::wszGameVer = NULL;
 DWORD CFiles::dwRefCount = 0;
 CIniFile CFiles::gameIni;
 bool CFiles::bInitIni = false;
-#ifdef __POSIX__
+#ifdef IS_POSIX
 WSTRING CFiles::wstrHomePath;
 #endif
 
@@ -93,7 +93,7 @@ static const WCHAR wszUniqueResFile[] = {
 	W_t('H'),W_t('a'),W_t('l'),W_t('p'),W_t('h'),W_t('H'),W_t('o'),W_t('p'),W_t('e'),W_t('f'),W_t('u'),W_t('l'),
 	W_t('.'),W_t('b'),W_t('m'),W_t('_'),W_t(0)};
 
-#ifdef __POSIX__
+#ifdef IS_POSIX
 //Constants used in default path construction/search
 static const char pszDatEnvVar[] = "DROD_1_6_DAT_PATH";
 static const char pszResEnvVar[] = "DROD_1_6_RES_PATH";
@@ -117,7 +117,7 @@ static const char *szDatFiles[] = { "drod1_6.dat", "player.dat", "text.dat",
       "drod.ini", NULL };
 #define MAXDATFILELENGTH 16
 
-#endif //#ifdef __POSIX__
+#endif //#ifdef IS_POSIX
 
 //
 //Public methods.
@@ -150,7 +150,7 @@ CFiles::~CFiles()
 
 //******************************************************************************
 //******************************************************************************
-#ifdef __POSIX__
+#ifdef IS_POSIX
 //******************************************************************************
 bool CFiles::CreatePathIfInvalid (
 //Creates path and all required parent directories (unless they already exist).
@@ -275,7 +275,7 @@ static bool UnwrinkleEnvPath (
    return true;
 }
 
-#endif // ifdef __POSIX__
+#endif // ifdef IS_POSIX
 
 //******************************************************************************
 void CFiles::TryToFixDataPath()
@@ -283,7 +283,7 @@ void CFiles::TryToFixDataPath()
 {
 	WSTRING wstrDatPathTxt;
 
-#ifdef __POSIX__
+#ifdef IS_POSIX
 	// Beware the gotos ..
 
    WSTRING wstrDatFile = wszGameName;
@@ -353,7 +353,7 @@ bool CFiles::FileCopy(const WCHAR *pwzSourceFilepath, const WCHAR *pwzDestFilepa
     ASSERT(pwzDestFilepath && pWCv(pwzDestFilepath));
     CStretchyBuffer FileBuf;
     if (!ReadFileIntoBuffer(pwzSourceFilepath, FileBuf)) return false;
-#ifdef __POSIX__
+#ifdef IS_POSIX
     // Get stats from source file, and set the destination file mode to be identical.
     struct stat st;
     WSTRING wstrSource = pwzSourceFilepath;
@@ -361,6 +361,7 @@ bool CFiles::FileCopy(const WCHAR *pwzSourceFilepath, const WCHAR *pwzDestFilepa
     UnicodeToAscii(wstrSource, pszSource);
     stat(pszSource, &st); // The above read succeeded, so assume this succeeds too.
 #ifndef __native_client__
+    // TODO(binji): Add umask to nacl_io
     mode_t oldmask = umask(st.st_mode ^ 0777);
 #endif
 #endif
@@ -370,7 +371,7 @@ bool CFiles::FileCopy(const WCHAR *pwzSourceFilepath, const WCHAR *pwzDestFilepa
     FILE *pFile = Open(pwzDestFilepath, "wb");
     if (NULL != pFile)
     {
-#ifdef __POSIX__
+#ifdef IS_POSIX
       // Set the group of this file to the same as its owner.
       fchown(fileno(pFile), (uid_t)-1, st.st_gid);
 #endif
@@ -379,6 +380,7 @@ bool CFiles::FileCopy(const WCHAR *pwzSourceFilepath, const WCHAR *pwzDestFilepa
     }
 #ifdef __linux__
     // Reset file creation mask
+    // TODO(binji): Add umask to nacl_io
     umask(oldmask);
 #endif
     return bSuccess;
@@ -475,6 +477,7 @@ void CFiles::AppendErrorLog(
 
 #ifdef __linux__
     // Make errorlog world-writable
+    // TODO(binji): Add umask to nacl_io
     mode_t oldmask = umask(0);
 #endif
     pFile = Open(wstrDatPathTxt.c_str(), "a");
@@ -518,6 +521,7 @@ void CFiles::AppendErrorLog(
     }
 #ifdef __linux__
     // Restore old file creation mask.
+    // TODO(binji): Add umask to nacl_io
     umask(oldmask);
 #endif
 }
@@ -787,7 +791,7 @@ void CFiles::InitClass(
 		--wszLastBackslash; //Search to last backslash.
 	pWCv(wszLastBackslash) = '\0'; //Truncates the string.
 
-#ifdef __POSIX__
+#ifdef IS_POSIX
    //Get $HOME and create conf dir, so we don't have to later.
    UnwrinkleEnvPath("HOME", wstrHomePath);
    CreatePathIfInvalid((wstrHomePath + wszSlash + wszHomeConfDir + wszSlash
@@ -800,7 +804,7 @@ void CFiles::InitClass(
 	ASSERT(!this->wszResPath);
 	this->wszDatPath = new WCHAR[MAX_PATH + 1];
 	this->wszResPath = new WCHAR[MAX_PATH + 1];
-#ifdef __POSIX__
+#ifdef IS_POSIX
 	if (!FindPossibleDatFile(wszDataPathDotTxt, this->wszDatPath))
 	{
 		TryToFixDataPath();
@@ -897,7 +901,7 @@ void CFiles::DeinitClass()
 }
 
 //******************************************************************************
-#ifdef __POSIX__
+#ifdef IS_POSIX
 //******************************************************************************
 bool CFiles::CheckDataAndMakeWritable (
 //Check that all the dat-files (and the ini) are present and writable.  If any
@@ -1072,7 +1076,7 @@ bool CFiles::FindPossibleResFile(
 }
 
 //******************************************************************************
-#else // ifdef __POSIX__
+#else // ifdef IS_POSIX
 //******************************************************************************
 bool CFiles::FindPossibleDatPath(
 //Finds a directory that could be a data directory because it contains
@@ -1203,7 +1207,7 @@ bool CFiles::FindPossibleResPath(
 }
 
 //******************************************************************************
-#endif // ifdef __POSIX__, else
+#endif // ifdef IS_POSIX, else
 
 //******************************************************************************
 bool CFiles::WriteDataPathTxt(
@@ -1352,7 +1356,7 @@ void CFiles::PopLogContext(const char *pszDesc)
 #endif // #ifdef USE_LOGCONTEXT
 
 //**************************************************************************************
-#ifdef __POSIX__
+#ifdef IS_POSIX
 CPathGen::CPathGen (WCHAR *buffer, const WCHAR *expr)
 : wszBuffer(buffer), wszExpr(expr)
 {
@@ -1406,7 +1410,7 @@ int CPathGen::Next ()
    WCv(this->wszBuffer[j]) = 0;
    return ret;
 }
-#endif //#ifdef __POSIX__
+#endif //#ifdef IS_POSIX
 
 // $Log: Files.cpp,v $
 // Revision 1.28  2004/08/09 21:06:01  gjj

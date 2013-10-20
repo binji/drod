@@ -31,7 +31,7 @@
 #define FILES_H
 
 #if defined(__linux__) || defined(__native_client__)
-#	define __POSIX__
+#	define IS_POSIX
 #endif
 
 #if defined WIN32
@@ -40,7 +40,7 @@
 #	undef HAS_UNICODE
 #elif defined __APPLE__
 # 	undef HAS_UNICODE
-#elif defined __POSIX__
+#elif defined IS_POSIX
 #	undef HAS_UNICODE
 #else
 #error Platform unknown!  Does this platform support Unicode?
@@ -113,14 +113,14 @@ public:
     static bool             GetTrueDatafileName(WCHAR *pszFilepath);
     static void             MutateFileName(WCHAR *pszFilepath);
     static bool            WindowsCanBrowseUnicode();
-#ifdef __POSIX__
+#ifdef IS_POSIX
     static bool             CreatePathIfInvalid (const WCHAR *wszPath);
     static const WCHAR *    GetHomePath() {return wstrHomePath.c_str();}
 #endif
 
 private:
     void                    DeinitClass();
-#ifdef __POSIX__
+#ifdef IS_POSIX
     static bool             CheckDataAndMakeWritable(WCHAR *wszPath);
     static bool             CheckForDataFile(WCHAR *wszPath, const WCHAR *wszFmt,
                                   const WCHAR *wszFile, const bool bTryClean, const bool bData);
@@ -135,7 +135,7 @@ private:
     static bool             WriteDataPathTxt(const WCHAR *pszFilepath,
 		    const WCHAR *wszDatPath, const WCHAR *wszResPath, const bool overwrite);
 
-#ifdef __POSIX__
+#ifdef IS_POSIX
     static WSTRING wstrHomePath;
 #endif
     static WCHAR *wszAppPath;
@@ -149,7 +149,7 @@ private:
     PREVENT_DEFAULT_COPY(CFiles);
 };
 
-#ifdef __POSIX__
+#ifdef IS_POSIX
 //A small class for getting trees of search paths.  The expr parameter to
 //the constructor is a string in a special format containing the paths we want
 //with a few control chars thrown in (all control chars except ; are replaced
@@ -181,7 +181,7 @@ public:
    CPathGen(WCHAR *buffer, const WCHAR *expr);
    int Next();
 };
-#endif //#ifdef __POSIX__
+#endif //#ifdef IS_POSIX
 
 #endif //...#ifndef FILES_H
 
