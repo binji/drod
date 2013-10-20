@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Help for Deadly Rooms of Death</title>
+</head>
+<body bgcolor="#FFFFFF">
+<img src="images/drodlogo.jpg">
+<hr>
+<h3><u>Room Editor</u></h3>
+<p>The Room Editor is reached by selecting a room in the <a
+ href="editselect.html">Editor screen</a>.&nbsp; You can use it to edit
+any room in the game's data file. </p>
+<p>The Room Editor displays a view of the selected room as it would be
+seen in the game.<br>
+</p>
+<p><b>Selecting Objects for Placement -</b>A tabbed menu of game
+objects is shown on the left side of the screen. &nbsp;The objects in
+DROD have been broken down into three categories, also called layers:
+(1) room pieces (what
+the room is made from, such as walls, doors, pits, etc), (2) room
+objects (what goes in a room, such as orbs, scrolls, potions, etc), and
+(3) monsters (including tar, and placing the player's starting position
+in the level entrance room). &nbsp;Select a tab to display that object
+category. &nbsp;Click on an item in the menu to select it for placement.</p>
+<p><b>Placing Objects</b> - Left-click on a square in the room to place
+the currently selected item there.&nbsp; Items cannot be placed on a
+square if something already exists there on the same layer as the
+object being placed.&nbsp; To delete placed objects, see "Deleting
+Objects" below.&nbsp; When an item can't or shouldn't be placed on a
+square, it will be shaded red to indicate the object
+won't be placed there. &nbsp;The player's level start position is
+placed
+in the level's entrance room. &nbsp;Placing it in another room will
+make
+that the new level entrance room.<br>
+</p>
+<p><span style="font-weight: bold;">Setting Object Orientation</span> -
+For certain objects, their orientation is significant (such as force
+arrows, monsters, and the player's starting position). Use the "Turn
+clockwise" and "Turn counter-clockwise" keys or the mouse wheel to
+rotate the way objects will be placed. While holding down the left
+mouse button, the orientation of the object being placed can be changed
+until the mouse button is released.</p>
+<p>
+</p>
+<p><b>Placing Multiple Objects</b> - Dragging the mouse with the left
+button down will fill the highlighted region with the selected object
+on
+all open squares. &nbsp;Some items are commonly placed only one at a
+time (such as scrolls or checkpoints). &nbsp;For these items, placing
+more than one at a time is disabled.<br>
+</p>
+<p>To make a duplicate copy of a room region, drag the mouse to
+highlight a rectangular area and press &lt;Ctrl-C&gt; while the mouse
+button is down to mark the region to be copied.&nbsp; The region marked
+for copying stays chosen until a new region is marked or you begin
+editing a different room.&nbsp; Press &lt;Ctrl-V&gt; at any time to
+copy the marked region.&nbsp; Click on a
+square to paste a copy of that region, the clicked square being the
+top-left corner.<br>
+</p>
+<p><span style="font-weight: bold;">Deleting Objects</span> -
+Right-clicking on a square will delete any object on that square from
+the currently selected menu layer.&nbsp; Dragging a region with the
+right mouse button down will delete all objects of that layer in the
+selected area.&nbsp; Objects can also be deleted by selecting the empty
+floor tile on the menu for a specific layer and placing it as a normal
+object.<br>
+</p>
+<p>
+</p>
+<p><span style="font-weight: bold;">Undo/Redo</span> - Press the "Undo"
+button or &lt;Ctrl-Z&gt; to undo changes you've made to the room during
+this
+session (since selecting the room for editing). Press "Redo" or
+&lt;Ctrl-Y&gt; to
+redo changes that have been undone. Note that undone commands cannot be
+redone once you
+starting making other changes to the room.</p>
+<p>
+</p>
+<p><span style="font-weight: bold;">Editor Settings</span> - Enabling
+the "Show Errors" checkbox will highlight objects in the room that
+have an improper or questionable placement (see Room Errors
+below).&nbsp; Uncheck "Save room automatically" on the <a
+ href="settings.html">player settings</a> screen if you want the editor
+to prompt you before saving any changes you have made to a room.<br>
+</p>
+<p><b>Choosing a Room from the Map</b> - Click on the level map to
+select any room in the selected level.&nbsp; You can also click on an
+area adjacent to an existing room to add a new room to the level at
+that
+location. &nbsp;Hit &lt;Ctrl-X&gt; to cut and &lt;Ctrl-C&gt; to copy
+the
+current room. &nbsp;Hit &lt;Ctrl-V&gt; to paste the marked room to the
+currently selected spot on the map. &nbsp;Hit the &lt;delete&gt; key to
+permanently erase a room from the game.<br>
+</p>
+<p><span style="font-weight: bold;">Customizing Objects</span> -
+Several
+items can be customized to act a certain way. &nbsp;Customizable
+objects
+are the following:<br>
+</p>
+<ol>
+  <li>Orbs.&nbsp; Click on an orb to view which yellow gates it
+affects.&nbsp; Lightning bolts will flash from the orb to all gates it
+is currently acting on.&nbsp; Gates highlighted green will be opened
+when the orb is
+struck, gates highlighted orange will be toggled, and gates highlighted
+red will be closed. &nbsp;Clicking on a yellow gate while in orb
+editing mode
+will change the effect the orb has on this gate. &nbsp;Clicking on a
+square without an orb or a gate will exit orb editing mode.</li>
+  <li>Yellow gates.&nbsp; Click on a yellow gate to view which orbs
+affect it.&nbsp; Lightning bolts will flash from the gate to all orbs
+acting on it.&nbsp; Clicking on an orb while in door editing more will
+change the effect the orb has on the selected gate.&nbsp; The color
+coding scheme is the same as for orb customization.&nbsp; Clicking on a
+square without an orb or a yellow gate will exit door editing mode.<br>
+  </li>
+  <li>Stairs.&nbsp; After placing stairs, a dialog box will appear with
+a
+list
+of levels in the hold. &nbsp;Select one of the levels to determine
+which level the player will go to from this staircase.&nbsp; Selecting
+"End hold" means the player finishes the hold on descending these
+stairs.&nbsp; Clicking on the checkbox "Show levels from all holds"
+will list levels from all holds to which your player has editing
+privileges.&nbsp; Selecting a level from a different hold will take the
+player to that level and hold.&nbsp; The destination level can be
+changed at any time by clicking on the staircase again.<br>
+  </li>
+  <li>Serpents. &nbsp;Serpents are placed a piece at a time. &nbsp;Once
+you start placing a serpent, click on a room square to mark a turn in
+its body.
+&nbsp;Continue placing segments by clicking to lay down each new piece
+of the serpent.
+&nbsp;Pieces that have already been placed can be removed by clicking
+on part of the last segment placed.
+&nbsp;To finish placing the monster, click twice on the same
+spot.&nbsp; Click on any previously placed serpent to modify it.</li>
+</ol>
+<p><span style="font-weight: bold;">Room Errors </span>- Errors
+highlighted in the room include the following:<br>
+</p>
+<ol>
+  <li>Matching room edges. &nbsp;Room edge squares are highlighted blue
+if they don't match the squares of an adjacent room. An open square
+will
+be highlighted if there is an obstacle (or no room) on the other side,
+for instance.</li>
+  <li>Orbs. &nbsp;Orbs generally affect yellow gates. &nbsp;Orbs that
+don't affect any gates are marked orange.</li>
+  <li>Gates. &nbsp;Yellow gates that don't have any orbs affecting them
+are marked orange. &nbsp;Red gates in a room without trapdoors are
+highlighted. &nbsp;Green doors in a room without any monsters are
+highlighted.</li>
+  <li>Strange placement. &nbsp;If an object is put in a location that
+might not allow it to be used correctly, it will be marked red.
+Examples
+of this are placing scrolls or potions on walls where the player can't
+get to them.</li>
+</ol>
+<p><span style="font-weight: bold;">Playtesting</span> - You can test
+the current room by hitting F5, then clicking on the room position
+where you
+want to begin play. Playtesting continues until &lt;Escape&gt; is
+pressed.<br>
+</p>
+<p>Misc. Notes - When saving a room, any demos and saved games recorded
+in that room might no longer be valid and will be deleted.<br>
+</p>
+<p>Press &lt;Escape&gt; to return to the <a href="editselect.html">main
+editor screen</a>. </p>
+<p></p>
+<hr> <a href="contents.html">Contents</a>
+</body>
+</html>

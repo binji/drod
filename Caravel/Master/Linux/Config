@@ -1,0 +1,270 @@
+#######################################
+### DROD Linux Configuration: Index ###
+#######################################
+
+# <0>  Requirements
+# <1>  Install setup
+# <2>  Compiler flags
+# <3>  SDL
+# <4>  Linker flags setup
+# <5>  Link type setup
+# <6>  System config
+# <7>  Misc build vars
+# <8>  Program names
+
+#########################
+### <0>  Requirements ###
+#########################
+
+# Compile-time requirements:
+#
+#   * GNU make (or compatible)
+#   * g++ 3
+#   * libstdc++-v3 with pod_char_traits.h (see below)
+#   * Metakit 2.4.9.2
+#   * Zlib 1.2.2
+#
+# Run-time (and compile-time) requirements:
+#
+#   * SDL 1.2.7 (NOT 1.2.8, >=1.2.9 should be ok)
+#   * FMOD 3.7.4, or SDL_mixer 1.2.6
+#   * Expat 1.95.8
+#   * Freetype 2.1.4
+#   * SDL_ttf 2.0.6
+#
+# These are included in the binary distribution. Lower versions might work, but
+# are untested. (Lower versions of Freetype/SDL_ttf are known to have problems
+# with DROD, so if you decide to be adventurous, at least get those.)
+#
+# To get libstdc++-v3's pod_char_traits.h, you have three options:
+#
+#   * There's a small chance you already have it. Get the other stuff, edit this
+#     config file to your liking, and run make. If the compile goes past
+#     BackEndLib without complaining about missing pod_char_traits.h,
+#     congratulations!
+#
+#   * Otherwise, if you have CVS installed, do this:
+#
+#     $ cvs -d :pserver:anoncvs@subversions.gnu.org:/cvsroot/gcc login
+#     Logging in to :pserver:anoncvs@subversions.gnu.org:2401/cvsroot/gcc
+#     CVS password: <press enter>
+#     $ cvs -d :pserver:anoncvs@subversions.gnu.org:/cvsroot/gcc checkout
+#         gcc/libstdc++-v3/include/ext/pod_char_traits.h
+#
+#   * Otherwise, get it from one of these CVS web frontends:
+#
+#     http://savannah.gnu.org/cgi-bin/viewcvs/gcc/gcc/libstdc++-v3/include/ext/pod_char_traits.h
+#     http://gcc.gnu.org/cgi-bin/cvsweb.cgi/gcc/libstdc++-v3/include/ext/pod_char_traits.h
+#
+# If you got it from CVS, create a new directory called 'ext' in the top source
+# directory, and place pod_char_traits.h in there.
+#
+
+##########################
+### <1>  Install setup ###
+##########################
+
+# The first time DROD is run by a new user, it searches for its resource and
+# data files. The result of this search is saved in
+# $(HOME)/.caravel/drod/DataPath.txt. If you want to install DROD resource or
+# data files into a path not listed in the respective search path below, either
+# place the data in the same directory as DROD (the 'one' alternative), or
+# place DataPath.txt somewhere in the data search path and edit it to point to
+# your resource and data files. The DataPath.txt format is:
+# /path/to/data;/path/to/resource;
+
+# For resource files (read-only data), the search path is:
+# (for each of these, a subdir 'Data' is also searched)
+#   <app path>
+#   /usr/drod
+#   /usr/share/drod
+#   /usr/share/games/drod
+#   /usr/games/drod
+#   /usr/local/drod
+#   /usr/local/share/drod
+#   /usr/local/share/games/drod
+#   /usr/local/games/drod
+
+# For data files (writable), the search path is:
+# (for each of these, a subdir 'Data' is also searched)
+#   $(HOME)/.caravel/drod
+#   <app path>
+#   /var/drod
+#   /var/games/drod
+#   /var/lib/drod
+#   /var/lib/games/drod
+
+# Installation prefix, handy for sandbox installation / package creation.
+# This is automatically prefixed to all installation paths specified below
+# (don't add this to the paths below, it's added in the makefile).
+# No trailing slash! Empty means root.
+DESTDIR =
+
+# These are the arguments to the install commands used to install the data.
+# The data directory needs to be writable by all users that want to run DROD,
+# with permission to create and delete files.
+
+INST_DAT_DIRS  = -m 0775 -g games
+INST_DAT_FILES = -m 0664 -g games
+INST_RES_DIRS  = -m 0755
+INST_RES_FILES = -m 0644
+INST_BIN_DIRS  = -m 0755
+INST_BIN_FILES = -m 0755
+
+# Convenience variable: Set to 'usr', 'local', 'one', or create your own set.
+INSTALL_TYPE = local
+
+BIN_usr = usr/games
+RES_usr = usr/share/games/drod
+DAT_usr = var/games/drod
+
+BIN_local = usr/local/games
+RES_local = usr/local/share/games/drod
+DAT_local = var/games/drod
+
+# Variable used by 'one'. Anything goes. (This variable is only used here.)
+# To install in currect dir, set to '.'
+prefix  = opt/games/drod
+
+BIN_one = $(prefix)
+RES_one = $(prefix)/Data
+DAT_one = $(prefix)/Data
+
+###########################
+### <2>  Compiler flags ###
+###########################
+
+# Common flags (always used)
+CXXFLAGS_common = -W -Wall
+
+# DROD/Util/cgi: Custom flags (use env if available)
+ifdef CXXFLAGS
+CXXFLAGS_custom = $(CXXFLAGS)
+else
+CXXFLAGS_custom = -Wno-unused -pipe -O2 -fomit-frame-pointer -ffast-math
+endif
+# DROD/Util: Release flags
+CXXFLAGS_release = -Wno-unused -pipe -O2 -fomit-frame-pointer -ffast-math -march=i586
+# DROD/Util: Debug flags
+CXXFLAGS_debug   = -Wno-unused -pipe -O2 -ffast-math -march=i586 -ggdb -D_DEBUG
+# DROD/Util: Profile flags
+CXXFLAGS_profile = $(CXXFLAGS_debug) -pg
+
+################
+### <3>  SDL ###
+################
+
+SDL_INCLUDE = $(shell sdl-config --cflags)
+SDL_LIBS = $(shell sdl-config --libs)
+
+###############################
+### <4>  Linker flags setup ###
+###############################
+
+LIBRARY_FMOD=fmod-3.74.1
+
+# DROD: All dynamic
+LDFLAGS_DROD_dynamic = -lmk4 -lz -lexpat -l$(LIBRARY_FMOD) -lSDL_ttf $(SDL_LIBS)
+
+# DROD: Static metakit and zlib
+LDFLAGS_DROD_staticmkz = -Wl,-Bstatic -lmk4 -lz -Wl,-Bdynamic \
+	-lexpat -l$(LIBRARY_FMOD) -lSDL_ttf $(SDL_LIBS)
+
+# DRODUtil: All dynamic
+LDFLAGS_UTIL_dynamic = -lmk4 -lz -lexpat
+
+# DRODUtil: Static metakit and zlib
+LDFLAGS_UTIL_staticmkz = -Wl,-Bstatic -lmk4 -lz -Wl,-Bdynamic -lexpat
+
+############################
+### <5>  Link type setup ###
+############################
+
+# DROD: Custom
+LDFLAGS_DROD_custom = $(LDFLAGS_DROD_dynamic)
+# DROD: Release
+LDFLAGS_DROD_release = -Wl,-O1 -Wl,-s $(LDFLAGS_DROD_staticmkz)
+# DROD: Debug
+LDFLAGS_DROD_debug = $(LDFLAGS_DROD_staticmkz)
+# DROD: Profile
+LDFLAGS_DROD_profile = -pg $(LDFLAGS_DROD_staticmkz)
+
+# DRODUtil: Custom
+LDFLAGS_UTIL_custom = $(LDFLAGS_UTIL_dynamic)
+# DRODUtil: Release
+LDFLAGS_UTIL_release = -Wl,-O1 -Wl,-s $(LDFLAGS_UTIL_staticmkz)
+# DRODUtil: Debug
+LDFLAGS_UTIL_debug = $(LDFLAGS_UTIL_staticmkz)
+# DRODUtil: Profile
+LDFLAGS_UTIL_profile = -pg $(LDFLAGS_UTIL_staticmkz)
+
+##########################
+### <6>  System config ###
+##########################
+
+# All external programs used in the makefile are defined here.
+
+# Compiler
+CXX      = g++
+
+# Compile and generate dependencies in one operation
+CXXDEP   = $(CXX) -MD
+# Switch to specify out-file for dependency info
+DEPOUT   = -MF
+
+# Linker
+LD       = $(CXX)
+
+# Archiver
+AR       = ar cr
+RANLIB   = ranlib
+
+# Grep
+GREP     = grep
+
+# Stream Editor
+SED      = sed -e
+
+# Test
+TEST     = test
+
+# Create directory
+MKDIR    = mkdir -p
+
+# Installer
+INSTALL  = install
+
+# Recursive copy
+CP_R     = cp -r
+
+# Remove file / recursive
+RM_F     = rm -f
+RM_RF    = rm -rf
+
+# Echo
+ECHO     = echo
+
+############################
+### <7>  Misc build vars ###
+############################
+
+# Top source directory
+SRCDIR = ../..
+
+# Data
+SRC_DATADIR  = $(SRCDIR)/Data
+SRC_DAT      = *.dat *.ini
+SRC_RES_BMP  = *.bm_ *.bmp *.tim
+SRC_RES_FONT = *.ttf
+SRC_RES_MSX  = *.s3_ *.s3m
+SRC_RES_SFX  = *.ogg *.wav
+SRC_RES_HELP = *.html
+SRC_RES_HIMG = *.jpg
+
+##########################
+### <8>  Program names ###
+##########################
+
+# No path
+DROD     = drod
+DRODUTIL = drodutil
