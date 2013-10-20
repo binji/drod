@@ -52,8 +52,8 @@
 #endif
 #include <sys/stat.h>
 
-#ifdef __linux__
-#include <unistd.h> //for chdir
+#if defined(__linux__) || defined(__native_client__)
+#include <unistd.h> //for chdir and access
 #endif
 
 //File extension filters.

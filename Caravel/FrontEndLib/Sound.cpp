@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Caravel Software.
- * Portions created by the Initial Developer are Copyright (C) 1995, 1996, 
+ * Portions created by the Initial Developer are Copyright (C) 1995, 1996,
  * 1997, 2000, 2001, 2002 Caravel Software. All Rights Reserved.
  *
  * Contributor(s):
@@ -50,7 +50,7 @@ UINT CSound::SAMPLE_CHANNEL_COUNT = 0;
 UINT CSound::MODULE_CHANNEL_COUNT = 0;
 UINT CSound::CHANNEL_COUNT = SAMPLE_CHANNEL_COUNT + MODULE_CHANNEL_COUNT;
 
-#ifndef __sgi
+#if defined(USE_FMOD)
 //******************************************************************************
 void F_CALLBACKAPI OnLyricNotePlayed(FMUSIC_MODULE* /*pModule*/, unsigned char /*InstrumentNo*/)
 //Called by FMOD whenever a note plays for the lyric instrument.
@@ -74,7 +74,7 @@ void F_CALLBACKAPI OnLyricNotePlayed(FMUSIC_MODULE* /*pModule*/, unsigned char /
 CSoundEffect::CSoundEffect(void)
 //Constructor.
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
 	this->nChannel = -1;
 	this->bPlayRandomSample = this->bIsLoaded = false;
 	this->iLastSamplePlayed = this->Samples.end();
@@ -109,7 +109,7 @@ bool CSoundEffect::Load(
 //True if all samples were loaded, false if not.  If no samples load, the Play()
 //method will do nothing when called.
 {
-#ifdef __sgi
+#if defined(NO_SOUND)
 	return true;
 #else
 	bool bCompleteSuccess = true;
@@ -124,12 +124,14 @@ bool CSoundEffect::Load(
 	for (list<WSTRING>::const_iterator iFilepath = FilepathArray.begin();
 		iFilepath != FilepathArray.end(); ++iFilepath)
 	{
-char buffer[MAX_PATH+1];
-UnicodeToAscii(*iFilepath, buffer);
-		FSOUND_SAMPLE *pSample = LoadWave(iFilepath->c_str());
+		char buffer[MAX_PATH+1];
+		UnicodeToAscii(*iFilepath, buffer);
+		SOUND *pSample = LoadWave(iFilepath->c_str());
 		if (pSample)
 		{
+#if defined(USE_FMOD)
 			FSOUND_Sample_SetMode(pSample, FSOUND_LOOP_OFF);
+#endif
 			this->Samples.push_back(pSample);
 		}
 		else
@@ -147,15 +149,19 @@ UnicodeToAscii(*iFilepath, buffer);
 void CSoundEffect::Play(void)
 //Plays a sample for the sound effect.
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
 	//Do nothing if sound effect is not loaded.
 	if (!this->bIsLoaded) return;
 
 	//Stop any other samples playing on this channel.
+#if defined(USE_SDL_MIXER)
+	if (Mix_HaltChannel(this->nChannel)) ASSERTP(false, "Failed to stop sound.");
+#elif defined(USE_FMOD)
 	if (!FSOUND_StopSound(this->nChannel)) ASSERTP(false, "Failed to stop sound.");
+#endif
 
 	//Figure out which sample to play next.
-	list<FSOUND_SAMPLE *>::iterator iPlaySample;
+	list<SOUND *>::iterator iPlaySample;
 	if (this->Samples.size() == 1)
 		iPlaySample = this->iLastSamplePlayed = this->Samples.begin();
 	else if (this->bPlayRandomSample)
@@ -182,20 +188,28 @@ void CSoundEffect::Play(void)
 	}
 
 	//Play the sample.
+#if defined(USE_SDL_MIXER)
+	if (!Mix_PlayChannel(this->nChannel, *iPlaySample, 0)) ASSERTP(false, "Failed to play sound.");
+#elif defined(USE_FMOD)
 	if (!FSOUND_PlaySound(this->nChannel, *iPlaySample)) ASSERTP(false, "Failed to play sound.");
+#endif
 #endif
 }
 
 //***********************************************************************************
 void CSoundEffect::Unload(void)
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
 	ASSERT(this->bIsLoaded);
 
 	//Free the samples.
-	for (list<FSOUND_SAMPLE *>::iterator iSeek = this->Samples.begin();
+	for (list<SOUND *>::iterator iSeek = this->Samples.begin();
 			iSeek != this->Samples.end(); ++iSeek)
+#if defined(USE_SDL_MIXER)
+		Mix_FreeChunk(*iSeek);
+#elif defined(USE_FMOD)
 		FSOUND_Sample_Free(*iSeek);
+#endif
 	this->Samples.clear();
 
 	this->bIsLoaded = false;
@@ -206,9 +220,9 @@ void CSoundEffect::Unload(void)
 //CSoundEffect private methods.
 //
 
-#ifndef __sgi
+#if !defined(NO_SOUND)
 //**********************************************************************************
-FSOUND_SAMPLE* CSoundEffect::LoadWave(
+SOUND* CSoundEffect::LoadWave(
 //Load wave file, unencoding if necessary.
 //
 //Returns:
@@ -227,8 +241,14 @@ const
 		//Unencode encrpyted wave file.
 		buffer.Decode();
 	}
-	return FSOUND_Sample_Load(FSOUND_FREE, (char*)(BYTE*)buffer, 
+#if defined(USE_SDL_MIXER)
+	SDL_RWops* rwops = SDL_RWFromMem((char*)(BYTE*)buffer, buffer.Size());
+        int freesrc = 1;
+        return Mix_LoadWAV_RW(rwops, freesrc);
+#elif defined(USE_FMOD)
+	return FSOUND_Sample_Load(FSOUND_FREE, (char*)(BYTE*)buffer,
 			FSOUND_2D | FSOUND_LOADMEMORY, 0, buffer.Size());
+#endif
 }
 #endif
 
@@ -251,9 +271,14 @@ CSound::CSound(
    , bSoundEffectsOn(!bNoSound), bSoundEffectsAvailable(false)
    , eCurrentPlayingSongID(SOUNDLIB::SONGID_NONE)
    , nSoundVolume(128), nMusicVolume(128)
+#if !defined(NO_SOUND)
    , pModule(NULL)
+#endif
+#if defined(USE_SDL_MIXER)
+   , pModuleRWops(NULL)
+#endif
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
 	if (bNoSound) return;
 
 	CSound::SOUND_EFFECT_COUNT = SOUND_EFFECT_COUNT;
@@ -287,8 +312,8 @@ CSound::~CSound(void)
 }
 
 //********************************************************************************
-UINT CSound::GetLyricNoteCount(void) 
-//Returns the number of notes that have played for a song instrument that 
+UINT CSound::GetLyricNoteCount(void)
+//Returns the number of notes that have played for a song instrument that
 //corresponds to lyrics.
 const
 {
@@ -297,7 +322,7 @@ const
 
 //********************************************************************************
 void CSound::EnableSoundEffects(const bool bSetSoundEffectsOn)
-//Turns sound effect playback on or off.  
+//Turns sound effect playback on or off.
 {
 	this->bSoundEffectsOn=bSetSoundEffectsOn;
 }
@@ -317,10 +342,16 @@ void CSound::SetSoundEffectsVolume(
 	const int volume	//(in) value between 0 (silent) and 255 (full)
 )
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
 	ASSERT(volume >= 0 && volume <= 255);
 	nSoundVolume = volume;
+#if defined(USE_SDL_MIXER)
+	// Not quite the same, this will change the volume for all channels.
+        // The volume level goes from 0-128, instead of 0-255.
+	Mix_Volume(-1, volume >> 1);
+#elif defined(USE_FMOD)
 	FSOUND_SetSFXMasterVolume(volume);
+#endif
 #endif
 }
 
@@ -330,25 +361,34 @@ void CSound::SetMusicVolume(
 	const int volume	//(in) value between 0 (silent) and 255 (full)
 )
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
 	ASSERT(volume >= 0 && volume <= 255);
 	nMusicVolume = volume;
+#if defined(USE_SDL_MIXER)
+	// The volume level goes from 0-128, instead of 0-255.
+	Mix_VolumeMusic(volume >> 1);
+#elif defined(USE_FMOD)
 	if (this->pModule) FMUSIC_SetMasterVolume(this->pModule,volume);
+#endif
 #endif
 }
 
 //********************************************************************************
 bool CSound::IsSongFinished(void) const
-//Returns whether the song has completed playing, or when the last order has 
+//Returns whether the song has completed playing, or when the last order has
 //finished playing.  This stays set even if the song loops.  Also returns true
 //if no song is playing.
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
 	//Return without doing anything if no music is playing.
-	if (!this->bMusicOn || !this->bMusicAvailable || !this->pModule) 
+	if (!this->bMusicOn || !this->bMusicAvailable || !this->pModule)
 		return false;
 
+#if defined(USE_SDL_MIXER)
+	return Mix_PlayingMusic();
+#elif defined(USE_FMOD)
 	return (FMUSIC_IsFinished(this->pModule) != 0);
+#endif
 #else
 	return true;
 #endif
@@ -362,10 +402,10 @@ void CSound::PlaySong(
 	const UINT eSongID,			//(in)	Song to play.
 	const int nLyricInstrumentNo)	//(in)	Which instrument in the song corresponds
 									//		to lyrics for which notes will be counted.
-									//		If -1 (default) then no lyric note 
+									//		If -1 (default) then no lyric note
 									//		counting will be performed.
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
 	//Return successful without doing anything if music has been disabled.
 	if (!this->bMusicOn || !this->bMusicAvailable) return;
 
@@ -398,22 +438,38 @@ void CSound::PlaySong(
 		//Unencode encrpyted song file.
 		buffer.Decode();
 	}
+#if defined(USE_SDL_MIXER)
+        this->pModuleRWops = SDL_RWFromConstMem((const char*)(BYTE*)buffer, buffer.Size());
+	this->pModule = Mix_LoadMUS_RW(this->pModuleRWops);
+#elif defined(USE_FMOD)
 	this->pModule = FMUSIC_LoadSongEx((const char*)(BYTE*)buffer,0,buffer.Size(),
-         FSOUND_LOADMEMORY,NULL,1);
+	                                  FSOUND_LOADMEMORY,NULL,1);
+#endif
 	if (!this->pModule) {ASSERTP(false, "Failed to load song.(2)"); return;}
 
 	//Set volume.
+#if defined(USE_SDL_MIXER)
+	// The volume level goes from 0-128, instead of 0-255.
+	Mix_VolumeMusic(nMusicVolume >> 1);
+#elif defined(USE_FMOD)
 	FMUSIC_SetMasterVolume(this->pModule,nMusicVolume);
+#endif
 
 	//Set callback for counting lyric notes.
 	if (nLyricInstrumentNo != -1)
 	{
+		// Not sure how to make this work without FMOD.
+#if defined(USE_FMOD)
 		if (!FMUSIC_SetInstCallback(this->pModule, OnLyricNotePlayed,
 				nLyricInstrumentNo))
 			ASSERTP(false, "Lyric counting isn't going to work.");
+#endif
 	}
 
 	//Play the song.
+#if defined(USE_SDL_MIXER)
+	Mix_PlayMusic(this->pModule, 1);
+#elif defined(USE_FMOD)
 	if (!FMUSIC_PlaySong(this->pModule))
 	{
 		FMUSIC_FreeSong(this->pModule);
@@ -421,6 +477,7 @@ void CSound::PlaySong(
 		ASSERTP(false, "Failed to play song.");
 		return;
 	}
+#endif
 
 	//Success.
 	this->eCurrentPlayingSongID = eSongID;
@@ -435,12 +492,19 @@ bool CSound::StopSong(void)
 //True if no song is playing when function returns, false if not.
 {
 	bool bSuccess=true;
-#ifndef __sgi
+#if !defined(NO_SOUND)
 
 	if (this->pModule)
 	{
+#if defined(USE_SDL_MIXER)
+		Mix_HaltMusic();
+		Mix_FreeMusic(this->pModule);
+		SDL_FreeRW(this->pModuleRWops);
+		bSuccess = true;
+#elif defined(USE_FMOD)
 		bSuccess = (FMUSIC_StopSong(this->pModule) != 0);
 		FMUSIC_FreeSong(this->pModule);
+#endif
 		this->pModule = NULL;
 	}
 
@@ -461,7 +525,7 @@ void CSound::PlaySoundEffect(
 	if (!this->bSoundEffectsOn || !this->bSoundEffectsAvailable) return;
 
     ASSERT(eSEID < CSound::SOUND_EFFECT_COUNT);
-	
+
 	//Play it.
 	this->SoundEffectArray[eSEID].Play();
 
@@ -481,7 +545,7 @@ bool CSound::IsSoundEffectPlaying(
 //True if it is, false if not.
 const
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
   //Return successful without doing anything if sound effects have been disabled.
 	if (!this->bSoundEffectsOn || !this->bSoundEffectsAvailable) return false;
 
@@ -496,7 +560,11 @@ const
 
 	//Check that a sample is currently playing on the channel.  If it is, then I
 	//know that it is playing a sample for my sound effect.
+#if defined(USE_SDL_MIXER)
+	return Mix_Playing(nChannel);
+#elif defined(USE_FMOD)
 	return (FSOUND_IsPlaying(nChannel)!=false);
+#endif
 #else
 	return true;
 #endif
@@ -514,7 +582,7 @@ bool CSound::WaitForSoundEffectsToStop(
 //True if all sound effects stopped, false if max wait time elapsed.
 const
 {
-#ifndef __sgi
+#if !defined(NO_SOUND)
 	//Return successful without doing anything if sound effects have been disabled.
 	if (!this->bSoundEffectsOn || !this->bSoundEffectsAvailable) return true;
 
@@ -527,7 +595,11 @@ const
 		for (nChannelNo = MODULE_CHANNEL_COUNT; nChannelNo < CHANNEL_COUNT;
 				++nChannelNo)
 		{
+#if defined(USE_SDL_MIXER)
+			if (Mix_Playing(nChannelNo)) break; //At least one channel is playing.
+#elif defined(USE_FMOD)
 			if (FSOUND_IsPlaying(nChannelNo)) break; //At least one channel is playing.
+#endif
 		}
 		if (nChannelNo == CHANNEL_COUNT) return true; //Everything has stopped.
 
@@ -535,7 +607,7 @@ const
 		SDL_Delay(100);
 	}
 	while (SDL_GetTicks() - dwStartTime < dwMaxWaitTime);
-	
+
 	//Timed out waiting.
 	return false;
 #else
@@ -552,14 +624,14 @@ int CSound::GetLastFSOUNDError(
 //Gets last FSOUND error code along with test description.
 //
 //Params:
-	string &strErrDesc)	//(in/out)	Corresponds to error code.  Appends to end of 
+	string &strErrDesc)	//(in/out)	Corresponds to error code.  Appends to end of
 						//			string which may or may not be empty.
 //
 //Returns:
 //Error code or FMOD_ERR_NONE if no FSOUND error.
 const
 {
-#ifndef __sgi
+#if defined(USE_FMOD)
 	int nErrCode = FSOUND_GetError();
 	char szTemp[30];
 	sprintf(szTemp, "    FMOD Error #%d: ", nErrCode);
@@ -569,24 +641,24 @@ const
 	//needed.
 	switch (nErrCode)
 	{
-		case FMOD_ERR_NONE: 
-			strErrDesc +=	"No errors.\r\n"; 
+		case FMOD_ERR_NONE:
+			strErrDesc +=	"No errors.\r\n";
 		break;
-		
-		case FMOD_ERR_BUSY: 
+
+		case FMOD_ERR_BUSY:
 			strErrDesc +=	"Cannot call this command after FSOUND_Init. Call "
-							"FSOUND_Close first.\r\n"; 
+							"FSOUND_Close first.\r\n";
 		break;
-		
-		case FMOD_ERR_UNINITIALIZED: 
+
+		case FMOD_ERR_UNINITIALIZED:
 			strErrDesc +=	"This command failed because FSOUND_Init or "
-							"FSOUND_SetOutput was not called.\r\n"; 
+							"FSOUND_SetOutput was not called.\r\n";
 		break;
- 
+
 		case FMOD_ERR_INIT:
 			strErrDesc +=	"Error initializing output device.\r\n";
 		break;
- 
+
 		case FMOD_ERR_ALLOCATED:
 			strErrDesc +=	"Error initializing output device, but more "
 							"specifically, the output device is already in use and "
@@ -596,59 +668,59 @@ const
 		case FMOD_ERR_PLAY:
 			strErrDesc +=	"Playing the sound failed.\r\n";
  		break;
- 
+
 		case FMOD_ERR_OUTPUT_FORMAT:
 			strErrDesc +=	"Soundcard does not support the features needed for "
 							"this soundsystem (16bit stereo output).\r\n";
  		break;
- 
+
 		case FMOD_ERR_COOPERATIVELEVEL:
 			strErrDesc +=	"Error setting cooperative level for hardware.\r\n";
  		break;
- 
+
 		case FMOD_ERR_CREATEBUFFER:
 			strErrDesc +=	"Error creating hardware sound buffer.\r\n";
  		break;
- 
+
 		case FMOD_ERR_FILE_NOTFOUND:
 			strErrDesc +=	"File not found.\r\n";
  		break;
- 
+
 		case FMOD_ERR_FILE_FORMAT:
 			strErrDesc +=	"Unknown file format.\r\n";
  		break;
- 
+
 		case FMOD_ERR_FILE_BAD:
 			strErrDesc +=	"Error loading file.\r\n";
  		break;
- 
+
 		case FMOD_ERR_MEMORY:
 			strErrDesc +=	"Not enough memory or resources.\r\n";
  		break;
- 
+
 		case FMOD_ERR_VERSION:
 			strErrDesc +=	"The version number of this file format is not "
 							"supported.\r\n";
  		break;
- 
+
 		case FMOD_ERR_INVALID_PARAM:
 			strErrDesc +=	"An invalid parameter was passed to this "
 							"function.\r\n";
  		break;
- 
+
 		case FMOD_ERR_NO_EAX:
 			strErrDesc +=	"Tried to use an EAX command on a non EAX enabled "
 							"channel or output.\r\n";
  		break;
- 
+
 		case FMOD_ERR_CHANNEL_ALLOC:
 			strErrDesc +=	"Failed to allocate a new channel.\r\n";
  		break;
- 
+
 		case FMOD_ERR_RECORD:
 			strErrDesc +=	"Recording is not supported on this machine.\r\n";
  		break;
- 
+
 		case FMOD_ERR_MEDIAPLAYER:
 			strErrDesc +=	"Windows Media Player not installed so cannot play wma "
 							"or use internet streaming.\r\n";
@@ -671,7 +743,21 @@ bool CSound::InitSound(void)
 //Returns:
 //true if at least sound effects will be available, false otherwise.
 {
-#ifndef __sgi
+#if defined(USE_SDL_MIXER)
+	this->bSoundEffectsAvailable = this->bMusicAvailable = true;
+	Mix_Init(MIX_INIT_MOD);
+	const int chunksize = 8096;
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, chunksize) ||
+            Mix_AllocateChannels(CHANNEL_COUNT) != CHANNEL_COUNT)
+	{
+		this->bSoundEffectsAvailable = this->bMusicAvailable = false;
+		//Cleanup.
+		DeinitSound();
+		return false;
+	}
+
+	return true;
+#elif defined(USE_FMOD)
 	this->bSoundEffectsAvailable = this->bMusicAvailable = true;
 
 	//This log string will appear if an error occurs.
@@ -680,7 +766,7 @@ bool CSound::InitSound(void)
 	while (true) //non-looping.
 	{
 		//Compare loaded FMOD.DLL version to import library linked into .EXE.
-		if (FSOUND_GetVersion() != FMOD_VERSION) 
+		if (FSOUND_GetVersion() != FMOD_VERSION)
 		{
 			char szVersion[100];
 			sprintf(szVersion, "  FMOD.DLL version is %g and import library is %g!\r\n",
@@ -690,9 +776,9 @@ bool CSound::InitSound(void)
 		}
 		else
 			strInitLog += "  FMOD.DLL version matches import library.\r\n";
-		
+
 		//Init FSOUND--try best case params first.
-		if (FSOUND_Init(44100, CHANNEL_COUNT, 0)) 
+		if (FSOUND_Init(44100, CHANNEL_COUNT, 0))
 			strInitLog += "  FSOUND was initialized with best case params.\r\n";
 		else
 		{
@@ -704,14 +790,14 @@ bool CSound::InitSound(void)
 			if (FSOUND_Init(11025, CHANNEL_COUNT, 0)) return true;
 			strInitLog += "  FSOUND_Init(11025, CHANNEL_COUNT, 0) failed.\r\n";
 
-			//Maybe I'm asking for too many channels?  Try just enough for 
+			//Maybe I'm asking for too many channels?  Try just enough for
 			//sound effects, but not music.
 			if (FSOUND_Init(44100, SAMPLE_CHANNEL_COUNT, 0))
 			{
 				//Not enough channels for music.
 				CFiles Files;
 				Files.AppendErrorLog("Not enough available channels for music.\r\n");
-				this->bMusicAvailable = false; 
+				this->bMusicAvailable = false;
 				return true;
 			}
 			strInitLog += "  FSOUND_Init(44100, SAMPLE_CHANNEL_COUNT, 0) failed.\r\n";
@@ -719,7 +805,7 @@ bool CSound::InitSound(void)
 			//I give up.
 			break;
 		}
-						
+
 		//Ready to play sound effects and probably music.
 		return true;
 	}
@@ -733,7 +819,7 @@ bool CSound::InitSound(void)
 		CFiles Files;
 		Files.AppendErrorLog(strInitLog.c_str());
 	}
-		
+
 	//Cleanup.
 	DeinitSound();
 	return false;
@@ -746,7 +832,16 @@ bool CSound::InitSound(void)
 void CSound::DeinitSound(void)
 //Deinits sound module.
 {
-#ifndef __sgi
+#if defined(USE_SDL_MIXER)
+	if (this->pModule)
+	{
+		Mix_FreeMusic(this->pModule);
+		SDL_FreeRW(this->pModuleRWops);
+		this->pModule = NULL;
+	}
+        Mix_CloseAudio();
+	Mix_Quit();
+#elif defined(USE_FMOD)
 	if (this->pModule)
 	{
 		FMUSIC_FreeSong(this->pModule);

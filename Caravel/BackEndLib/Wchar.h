@@ -26,6 +26,7 @@
 #ifndef WCHAR_H
 #define WCHAR_H
 
+#include <stdio.h>
 #include <string>
 #include <functional>
 
@@ -53,7 +54,11 @@ typedef unsigned int		UINT;
 
 // This could actaully be replaced by '{' and '}' around the char constants,
 // but it's handy to keep it in case we need to change it later.
+#ifdef __native_client__
+#define W_t(x) x
+#else
 #define W_t(x) {x}
+#endif
 
 //Some common small strings.  Larger strings are localizable and should be kept in database.
 extern const WCHAR wszAsterisk[], wszColon[], wszComma[], wszCRLF[],

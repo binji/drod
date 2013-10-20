@@ -469,6 +469,10 @@ SOURCE=.\Res\DROD.ico
 
 SOURCE=.\DROD.rc
 # End Source File
+# Begin Source File
+
+SOURCE=.\NaClMain.cpp
+# End Source File
 # End Group
 # End Target
 # End Project

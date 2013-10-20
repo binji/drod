@@ -49,7 +49,7 @@
 #endif
 // If that failed, try to recognize the system
 #ifndef GAME_BYTEORDER
-#	if (defined(WIN32) || defined(__i386__))
+#	if (defined(WIN32) || defined(__i386__) || defined(__native_client__))
 #		define GAME_BYTEORDER GAME_BYTEORDER_LITTLE
 #	elif (defined(__APPLE__) || defined(__sgi))
 #		define GAME_BYTEORDER GAME_BYTEORDER_BIG

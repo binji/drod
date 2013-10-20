@@ -80,8 +80,9 @@ DEPFILES = $(OBJECTS:%.o=%.dep)
 INCLUDE = -I$(MODSDIR) -I$(SRCDIR) $(INCLUDE_$(MODULE))
 endif
 
-DRODLIBS = $(TLIBDIR)/DROD.a $(TLIBDIR)/FrontEndLib.a \
-	$(TLIBDIR)/DRODLib.a $(TLIBDIR)/BackEndLib.a
+DRODLIBS = $(TOBJDIR)/DROD/NaClMain.o $(TLIBDIR)/DROD.a \
+	   $(TLIBDIR)/FrontEndLib.a $(TLIBDIR)/DRODLib.a \
+	   $(TLIBDIR)/BackEndLib.a
 UTILLIBS = $(TLIBDIR)/DRODUtil.a $(TLIBDIR)/DRODLib.a $(TLIBDIR)/BackEndLib.a 
 
 help:
@@ -205,7 +206,7 @@ $(MODODIR)/%.o: $(MODSDIR)/%.cpp
 $(TLIBDIR)/$(MODULE).a: $(OBJECTS)
 	$(if $(MODULE),, $(error Don't call this target directly))
 	@$(ECHO) "    Archive $@"
-	@$(AR) $@ $(OBJECTS)
+	$(AR) $@ $(OBJECTS)
 	@$(RANLIB) $@
 	@$(ECHO) " "
 
@@ -217,7 +218,7 @@ link: $(MODS)
 
 $(TBINDIR)/$(DROD) $(TBINDIR)/$(DRODUTIL): $($(XTYPE)LIBS)
 	@$(ECHO) "    Linking $@:"
-	$(LD) $($(XTYPE)LIBS) $(LDFLAGS_$(XTYPE)_$(BTYPE)) -o $@
+	$(LD) $($(XTYPE)LIBS) $(LDFLAGS_common) $(LDFLAGS_$(XTYPE)_$(BTYPE)) -o $@
 
 ifneq ($(DEPFILES),)
 ifneq ($(wildcard $(MODODIR)/*.dep),)

@@ -123,7 +123,9 @@
 #include <BackEndLib/Assert.h>
 #include <BackEndLib/Types.h>
 
+#ifndef __native_client__
 #include <memory.h>
+#endif
 
 //
 //Cue event IDs.

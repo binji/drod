@@ -270,7 +270,9 @@ bool CDrodSound::LoadSoundEffects(void)
 	for (UINT nReserveChannel = MODULE_CHANNEL_COUNT;
 			nReserveChannel < CHANNEL_COUNT;	++nReserveChannel)
 	{
+#if !defined(__native_client__)
 		if (!FSOUND_SetReserved(nReserveChannel, true)) ASSERTP(false, "FSOUND_SetReserved() failed.");
+#endif
 	}
 
 	//Check sound effects to see what got loaded.

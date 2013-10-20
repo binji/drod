@@ -71,6 +71,8 @@ const string& sClip )  //(in)
 #elif defined(__linux__)
 #warning TODO: Add Clipboard write code for Linux.
 	return false;
+#elif defined(__native_client__)
+	return false;
 #else
 #error How do you set system clipboard data on this system?
 #endif
@@ -105,6 +107,8 @@ string& sClip )  //(out)
 
 #elif defined(__linux__)
 #warning TODO: Add Clipboard read code for Linux.
+	return false;
+#elif defined(__native_client__)
 	return false;
 #else
 #error How do you get system clipboard data on this system?

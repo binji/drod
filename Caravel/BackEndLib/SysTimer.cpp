@@ -31,7 +31,7 @@
 #	include <sys/time.h>
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__native_client__)
 #	include <sys/time.h>
 #endif
 
@@ -48,7 +48,7 @@ DWORD GetTicks(void)
 	return 0L;
 #elif defined (__APPLE__)
 	return clock();
-#elif defined (__linux__)
+#elif defined (__linux__) || defined(__native_client__)
 	struct timeval tv;
 	gettimeofday (&tv, NULL);
 	return tv.tv_sec * 1000 + tv.tv_usec / 1000;

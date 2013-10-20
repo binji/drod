@@ -98,14 +98,14 @@
 # This is automatically prefixed to all installation paths specified below
 # (don't add this to the paths below, it's added in the makefile).
 # No trailing slash! Empty means root.
-DESTDIR =
+DESTDIR ?=
 
 # These are the arguments to the install commands used to install the data.
 # The data directory needs to be writable by all users that want to run DROD,
 # with permission to create and delete files.
 
-INST_DAT_DIRS  = -m 0775 -g games
-INST_DAT_FILES = -m 0664 -g games
+INST_DAT_DIRS  = -m 0755
+INST_DAT_FILES = -m 0644
 INST_RES_DIRS  = -m 0755
 INST_RES_FILES = -m 0644
 INST_BIN_DIRS  = -m 0755
@@ -154,8 +154,9 @@ CXXFLAGS_profile = $(CXXFLAGS_debug) -pg
 ### <3>  SDL ###
 ################
 
-SDL_INCLUDE = $(shell sdl-config --cflags)
-SDL_LIBS = $(shell sdl-config --libs)
+SDL_CONFIG ?= sdl-config
+SDL_INCLUDE = $(shell $(SDL_CONFIG) --cflags)
+SDL_LIBS = $(shell $(SDL_CONFIG) --libs)
 
 ###############################
 ### <4>  Linker flags setup ###
@@ -163,8 +164,12 @@ SDL_LIBS = $(shell sdl-config --libs)
 
 LIBRARY_FMOD=fmod-3.74.1
 
+LDFLAGS_common ?=
+
+EXTRA_LIBS ?=
+
 # DROD: All dynamic
-LDFLAGS_DROD_dynamic = -lmk4 -lz -lexpat -l$(LIBRARY_FMOD) -lSDL_ttf $(SDL_LIBS)
+LDFLAGS_DROD_dynamic = -lmk4 -lz -lexpat -lSDL_ttf $(SDL_LIBS) $(EXTRA_LIBS)
 
 # DROD: Static metakit and zlib
 LDFLAGS_DROD_staticmkz = -Wl,-Bstatic -lmk4 -lz -Wl,-Bdynamic \
@@ -205,7 +210,7 @@ LDFLAGS_UTIL_profile = -pg $(LDFLAGS_UTIL_staticmkz)
 # All external programs used in the makefile are defined here.
 
 # Compiler
-CXX      = g++
+CXX      ?= g++
 
 # Compile and generate dependencies in one operation
 CXXDEP   = $(CXX) -MD
@@ -216,8 +221,8 @@ DEPOUT   = -MF
 LD       = $(CXX)
 
 # Archiver
-AR       = ar cr
-RANLIB   = ranlib
+AR       ?= ar cr
+RANLIB   ?= ranlib
 
 # Grep
 GREP     = grep

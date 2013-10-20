@@ -47,7 +47,13 @@
 #include <BackEndLib/Ports.h>
 #include <BackEndLib/Date.h>
 #include <string>
+#if !defined(__native_client__)
 #include <SDL_syswm.h>
+#endif
+
+#if defined(__native_client__) && defined(__GLIBC__)
+#define stricmp strcasecmp
+#endif
 
 using namespace std;
 
@@ -95,7 +101,11 @@ static MESSAGE_ID   InitSound(const bool bNoSound);
 static bool         IsAppAlreadyRunning();
 
 //*****************************************************************************
+#if defined(__native_client__)
+int drod_main(int argc, char *argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
     LOGCONTEXT("main");
 
@@ -744,6 +754,8 @@ static bool IsAppAlreadyRunning()
 	unlink(tmplockfile);
 	atexit(DeleteLockFile);
 	return false;
+#elif defined(__native_client__)
+        return false;
 #else
 #  error Disallow running more than one instance of the app at a time.
 #endif
@@ -803,6 +815,9 @@ static MESSAGE_ID CheckAvailableMemory()
 //MID_MemLowWarning             There is barely enough memory.
 //MID_MemLowExitNeeded          There is not enough memory to start DROD.
 {
+#if defined(__native_client__)
+  return MID_Success;
+#else
     //The amount of memory used before Init() is called.  In other words, after
     //libraries and the executable have been loaded into memory, but no code has
     //been executed that would require additional memory.  This is the time when
@@ -893,6 +908,7 @@ static MESSAGE_ID CheckAvailableMemory()
                 return MID_Success;
         }
     }
+#endif  // __native_client__
 }
 
 //*****************************************************************************

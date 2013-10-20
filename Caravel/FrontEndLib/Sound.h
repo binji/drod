@@ -37,8 +37,18 @@
 #include <BackEndLib/Types.h>
 #include <BackEndLib/Wchar.h>
 
-#ifndef __sgi
+#if defined(__native_client__)
+#include <SDL_mixer.h>
+typedef Mix_Chunk SOUND;
+typedef Mix_Music MUSIC;
+#define USE_SDL_MIXER 1
+#elif !defined(__sgi)
 #include <fmod.h>
+typedef FSOUND SOUND;
+typedef FMUSIC_MODULE MUSIC;
+#define USE_FMOD 1
+#else
+#define NO_SOUND
 #endif
 
 #include <list>
@@ -77,18 +87,18 @@ public:
 	void					Unload(void);
 
 private:
-#ifndef __sgi
-	FSOUND_SAMPLE*			LoadWave(const WCHAR *pwszWaveFilepath) const;
+#if !defined(__sgi)
+	SOUND*			LoadWave(const WCHAR *pwszWaveFilepath) const;
 
-	list<FSOUND_SAMPLE *>	Samples;
+	list<SOUND *>	Samples;
 #endif
 
 	int						nChannel;
 	bool					bPlayRandomSample;
 	bool					bIsLoaded;
 	
-#ifndef __sgi
-	list<FSOUND_SAMPLE *>::iterator iLastSamplePlayed;
+#if !defined(__sgi)
+	list<SOUND *>::iterator iLastSamplePlayed;
 #endif
 
 	PREVENT_DEFAULT_COPY(CSoundEffect);
@@ -138,8 +148,11 @@ protected:
 	UINT			eCurrentPlayingSongID;
 	int				nSoundVolume, nMusicVolume;
 
-#ifndef __sgi
-	FMUSIC_MODULE *	pModule;
+#if !defined(NO_SOUND)
+	MUSIC *	pModule;
+#endif
+#if defined(USE_SDL_MIXER)
+	SDL_RWops* pModuleRWops;
 #endif
 	CSoundEffect	*SoundEffectArray;
 	

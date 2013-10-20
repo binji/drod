@@ -159,7 +159,11 @@ void LittleToBig(WCHAR *pBuffer, int count )
 
 WCHAR towlower(const WCHAR ch)
 {
+#if defined(__native_client__)
+	const WCHAR_t c = ch;
+#else
 	const WCHAR_t c = ch.value;
+#endif
 #if (GAME_BYTEORDER == GAME_BYTEORDER_BIG)
 	LittleToBig( static_cast<WCHAR *>(&c), 1 );
 #endif
@@ -169,7 +173,11 @@ WCHAR towlower(const WCHAR ch)
 
 bool iswlower(const WCHAR ch)
 {
+#if defined(__native_client__)
+	const WCHAR_t c = ch;
+#else
 	const WCHAR_t c = ch.value;
+#endif
 #if (GAME_BYTEORDER == GAME_BYTEORDER_BIG)
 	LittleToBig( static_cast<WCHAR *>(&c), 1 );
 #endif
@@ -178,7 +186,11 @@ bool iswlower(const WCHAR ch)
 
 bool iswupper(const WCHAR ch)
 {
+#if defined(__native_client__)
+	const WCHAR_t c = ch;
+#else
 	const WCHAR_t c = ch.value;
+#endif
 #if (GAME_BYTEORDER == GAME_BYTEORDER_BIG)
 	LittleToBig( static_cast<WCHAR *>(&c), 1 );
 #endif

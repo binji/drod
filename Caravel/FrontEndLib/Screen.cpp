@@ -39,6 +39,10 @@
 
 static bool m_bIsCursorVisible = true;
 
+#if defined(__native_client__)
+#undef X_OK
+#endif
+
 //Message dialog coords and dimensions.
 const UINT CX_MESSAGE = 330;
 const UINT CY_MESSAGE = 200;

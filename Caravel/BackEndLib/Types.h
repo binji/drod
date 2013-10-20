@@ -32,6 +32,9 @@
 //Make sure I have the basics, like NULL.  I don't know how portable this 
 //include is.
 #	include <time.h>
+#	include <stdio.h>
+#	include <stdlib.h>
+#	include <string.h>
 
 #	ifndef _WINDOWS_ //If <windows.h> wasn't included.
 
